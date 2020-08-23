@@ -1,8 +1,8 @@
-# Pixelblaze-MQTT Bridge
+# pixelblaze2mqtt - A bridge between Pixelblaze and MQTT
 
-Small service that connects a [pixelblaze](https://www.bhencke.com/pixelblaze) to MQTT.
+Based off [davyhollevoet/pixelblaze_mqtt_bridge](https://github.com/davyhollevoet/pixelblaze_mqtt_bridge)
 
-Mainly written to work well with a [Home Assistant MQTT Light (json schema)](https://www.home-assistant.io/integrations/light.mqtt/#default-schema), but other MQTT-speaking things also work obviously.
+Works with a [Home Assistant MQTT Light (json schema)](https://www.home-assistant.io/integrations/light.mqtt/#json-schema), but other MQTT-speaking things also work obviously.
 
 
 ## Settings
