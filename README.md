@@ -105,7 +105,9 @@ These are mostly for me. I use nodered to send these glimmers when I get specifi
 They are still a work in progress
 
 ```lights\pixelblaze\notify h,s,v``` a little 2sec glimmer for an alert using HSV values
+
 ```lights\pixelblaze\notify2 h,s,v,h,s,v``` 2sec glimmer with 2 colors using HSV values
+
 ```lights\pixelblaze\notify3 h,s,v``` 2 flashes with HSV color
 
 
