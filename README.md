@@ -2,9 +2,8 @@
 
 Small service that connects a [pixelblaze](https://www.bhencke.com/pixelblaze) to MQTT.
 
-Mainly written to work well with a [Home Assistant MQTT Light (default schema)](https://www.home-assistant.io/integrations/light.mqtt/#default-schema), but other MQTT-speaking things also work obviously.
+Mainly written to work well with a [Home Assistant MQTT Light (json schema)](https://www.home-assistant.io/integrations/light.mqtt/#default-schema), but other MQTT-speaking things also work obviously.
 
-It would be nicer to talk to the pixelblaze directly from [Home Assistant](https://www.home-assistant.io/), but this was way easier to make :)
 
 ## Settings
 ```yaml
@@ -16,46 +15,11 @@ mqtt_password: ...
 mqtt_topic_prefix: lights/pixelblaze/
 # Websocket url of the pixelblaze instance. Yes, only a single instance is supported for now
 pixelblaze_address: ws://...:81/
-# Name or id of a pattern that supports two parameters: ext_h and ext_s. The bridge switches to this
-# pattern when something is published to $mqtt_topic_prefix + 'hs'
-ext_color_prog: .................
+ext_color_prog: Solid
 ```
 
 ## ext_color_prog
-When you select a single color for your light in Home Assistant (set up with the configuration below), it publishes H and S to `hs_command_topic`. The bridge will first switch the pixelblaze to the `ext_color_prog` pattern (if needed) and then sets H and S.
-
-What `ext_color_prog` shows, is up to you: only that color, that color with something else modulated on top,...
-
-The example below shows a single color with a [mexican hat-shaped](https://subsurfwiki.org/wiki/Ricker_wavelet) color displacement on top of it. The hat slowly moves between the endpoints of the leds. The base color can be controlled with a color picker in the pixelblaze web interface, or over a Websocket connection, like the bridge does: it updates `ext_h` and `ext_s` when something is published to `hs_command_topic`.
-```js
-export var ext_h = 0.22
-export var ext_s = 1
-export var ext_v = 1
-
-// You might want to tweak these values to suit your leds
-var sigma = 0.07
-var f = 2/(sqrt(3*sigma)*pow(PI, 0.25))
-
-export function beforeRender(delta) {
-  t1 = time(10)
-  t2 = triangle(t1)
-  ss = sigma * sigma
-}
-
-export function render(index) {
-  t = (index/pixelCount) - t2
-  tt = t*t
-  h = ext_h + f*(1-tt/ss)*exp(-tt/(2*ss))/10.0
-  hsv(h, ext_s, ext_v)
-}
-
-export function hsvPickerColor(h, s, v)
-{
-  ext_h = h
-  ext_s = s
-  ext_v = v
-}
-```
+Set to Solid. Changes light strip to a solid color using R,G,B to work with Home Assistant
 
 ## Home Assistant
 Example configuration for a [Home Assistant MQTT Light](https://www.home-assistant.io/integrations/light.mqtt/)
@@ -63,11 +27,14 @@ Example configuration for a [Home Assistant MQTT Light](https://www.home-assista
 ```yaml
 light:
   - platform: mqtt
-    command_topic: "lights/pixelblaze/switch"
-    brightness_command_topic: "lights/pixelblaze/brightness"
-    hs_command_topic: "lights/pixelblaze/hs"
-    effect_command_topic: "lights/pixelblaze/active_program"
+    schema: json
+    name: "TV Lights"
+    state_topic: "lights/pixelblaze/state"
+    command_topic: "lights/pixelblaze/set"
     availability_topic: "lights/pixelblaze/available"
+    brightness: true
+    effect: true
+    rgb: true
     effect_list:
       - opposites
       - spin cycle
@@ -83,4 +50,64 @@ light:
       - glitch bands
       - sparks
       - rainbow melt
+      - NaturalLightSync
+      - notify
+      - Sunset
+      - Solid
 ```
+
+## MQTT
+
+
+### MQTT status
+```lights/pixelblaze/state``` returns a json object containing:
+```
+
+state: ON or OFF
+brightness: 0-255
+effect_list: [an array of the effects availabe in Pixelblaze] -- Unfortunately I have not found a way to have HA update the effect_list given this list
+effect: Name of current pattern
+```
+
+### MQTT set (json)
+```lights/pixelblaze/set``` json formatted
+example:
+```
+{
+  "state": "ON",
+  "effect": "Solid",
+  "color": {
+    "r": 255,
+    "g": 255,
+    "b": 255
+  },
+  "brightness": 255
+}
+```
+
+### MQTT brightness
+```lights/pixelblaze/brightness 0-255```
+
+### MQTT effect
+```lights/pixelblaze/effect NameOfPattern```
+
+### MQTT toggle
+```lights/pixelblaze/toggle``` Toggles lights on/off
+
+### MQTT switch
+```lights/pixelblaze/switch ON or OFF``` switches to ON or OFF
+
+### MQTT vars
+```lights\pixelblaze\vars {"ext_h":20}``` set the variables for a pattern, in json format
+
+### MQTT notify
+These are mostly for me. I use nodered to send these glimmers when I get specific notifications on my phone (Someone specific messages me)
+They are still a work in progress
+
+```lights\pixelblaze\notify h,s,v``` a little 2sec glimmer for an alert using HSV values
+```lights\pixelblaze\notify2 h,s,v,h,s,v``` 2sec glimmer with 2 colors using HSV values
+```lights\pixelblaze\notify3 h,s,v``` 2 flashes with HSV color
+
+
+## Pixelblaze Pattern Codes
+[This folder](pixelblaze_patterns/) has some of the patterns I use in this script (Solid, NaturalLightSync, notify, Sunset)
